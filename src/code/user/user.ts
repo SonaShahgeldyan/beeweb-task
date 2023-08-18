@@ -1,19 +1,26 @@
 import pool from "../../../DB/db";
+import { queryMakerSelect } from "../../../DB/queryMaker";
 import { checkJwt } from "../../middleware/checkJwt";
 import express, { Request, Response } from "express";
+import { TableName } from "../../types/tableName.enum";
+import { HttpStatusCodesEnum } from "../../types/httpStatusCodes.enum";
 
 const router = express.Router();
 
 router.get("/", checkJwt, async (req: Request, res: Response) => {
   try {
-    const { username } = req.body;
-    const query = "SELECT * FROM users WHERE username = $1";
-    const result = await pool.query(query, [username]);
+    const { user_id } = req.body;
+    const params = { id: user_id };
+    const query = queryMakerSelect(TableName.USERS, params);
+    const result = await pool.query(query, [user_id]);
     const data = result.rows[0];
-    res.status(200).json(data);
+    console.log(result);
+    res.status(HttpStatusCodesEnum.OK).json(data);
   } catch (error) {
     console.error(error);
-    return res.status(401).json({ error: "Invalid credentials" });
+    return res
+      .status(HttpStatusCodesEnum.UNAUTHORIZED)
+      .json({ error: "Invalid credentials" });
   }
   return null;
 });

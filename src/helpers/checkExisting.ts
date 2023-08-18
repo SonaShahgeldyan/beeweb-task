@@ -1,11 +1,28 @@
 import pool from "../../DB/db";
+import { queryMakerSelect } from "../../DB/queryMaker";
+import { TableName } from "../types/tableName.enum";
 
-async function checkExistingEmailOrUsername(
-  email: string,
+export async function checkExistingEmailOrUsername(
   username: string
 ): Promise<boolean> {
-  const query = "SELECT * FROM users WHERE email = $1 OR username = $2";
-  const result = await pool.query(query, [email, username]);
+  const params = { username };
+  const query = queryMakerSelect(TableName.USERS, params);
+  const result = await pool.query(query, [username]);
   return result.rows.length > 0;
 }
-export default checkExistingEmailOrUsername;
+
+export async function checkExistingSubdomain(subdomain: string) {
+  const params = { subdomain };
+  const insertQuery = queryMakerSelect(TableName.WORKSPACES, params);
+  const result = await pool.query(insertQuery, [subdomain]);
+
+  return result.rows.length > 0;
+}
+
+export async function checkExistingChannel(name: string) {
+  const params = { name };
+  const insertQuery = queryMakerSelect(TableName.CHANNELS, params);
+  const result = await pool.query(insertQuery, [name]);
+
+  return result.rows.length > 0;
+}
