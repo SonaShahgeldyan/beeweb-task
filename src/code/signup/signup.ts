@@ -1,32 +1,35 @@
 import express from "express";
 import pool from "../../../DB/db";
-import checkExistingEmailOrUsername from "../../helpers/checkExisting";
+import { checkExistingEmailOrUsername } from "../../helpers/checkExisting";
+import { queryMakerInsert } from "../../../DB/queryMaker";
+import { TableName } from "../../types/tableName.enum";
+import { HttpStatusCodesEnum } from "../../types/httpStatusCodes.enum";
 
 const router = express.Router();
 
 router.post("/", async (req: any, res: any) => {
   const { username, email, password } = req.body;
+  const params = { username, email, password };
 
   try {
-    const emailExists = await checkExistingEmailOrUsername(email, null);
-    const usernameExists = await checkExistingEmailOrUsername(null, username);
-
-    if (emailExists) {
-      return res.status(409).json({ error: "Email already exists" });
-    }
+    const usernameExists = await checkExistingEmailOrUsername(username);
 
     if (usernameExists) {
-      return res.status(409).json({ error: "Username already exists" });
+      return res
+        .status(HttpStatusCodesEnum.ALREADY_EXISTS)
+        .json({ error: "Username already exists" });
     }
 
-    const insertQuery =
-      "INSERT INTO users (username, email, password) VALUES ($1, $2, $3)";
+    const insertQuery = queryMakerInsert(TableName.USERS, params);
     await pool.query(insertQuery, [username, email, password]);
 
-    res.status(201).json({ message: "User registered successfully" });
+    res
+      .status(HttpStatusCodesEnum.CREATED)
+      .json({ message: "User registered successfully" });
   } catch (error) {
-    console.error("Error registering user:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res
+      .status(HttpStatusCodesEnum.SERVER_ERROR)
+      .json({ error: "Internal server error" });
   }
 });
 
